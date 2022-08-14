@@ -1,0 +1,10 @@
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
+!diets_data.csv
+!luciferase_data.csv
+!mpd_data.csv
+!rapamycin_bw_data.csv
+!rapamycin_data.csv
+!validation_data.csv

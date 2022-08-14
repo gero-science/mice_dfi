@@ -1,0 +1,10 @@
+*.pyc
+*.bak
+*.tex
+
+*egg-info/
+.idea/
+venv/
+venv_py3/
+src/mice_dfi/dataset/raw/
+notebooks/.ipynb_checkpoints/

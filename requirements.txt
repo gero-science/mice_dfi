@@ -1,0 +1,9 @@
+tensorflow==2.6.0
+numpy==1.19.4
+scikit-learn==0.23.2
+scipy==1.8.1
+pandas>=1.1.4
+matplotlib==3.3.2
+wget==3.2
+lifelines>=0.26
+tqdm>=4.60

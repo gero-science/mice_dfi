@@ -1,0 +1,37 @@
+# Base ae architecture
+input_dim: 12  # size of input vector (number of CBC features)
+rank: 1  # number of dynamical variables in AR model
+inner_dim: 4  # encoder output size (same as decoder input)
+nodes: [8, 4]  # list of dense layer output size in encoder (decoder has reverse order)
+ResNet: true  # uses ResNet shortcuts
+Resnet_config: [[4], [2]]   # list of dense layer in ResNet units. the same length as `nodes` list
+dropouts: [null, null]   # list of dropout values. the same length as `nodes` list
+bn_first: True  # adds non-trainable batch norm layer to the input
+corrupt_input: null  # add Gaussian noise to the inputs
+loss_future_raw: True  # add MSE loss between X(t+1)_true and X(t+1)_predicted
+
+# Layers config
+act_props:  # additional params to activation function
+   alpha: 0.05  # leaky alpha
+
+disable_bn: True # if True do not use batch norm between dense layers
+batch_props:  # batch norm properties
+     renorm: False
+
+dense_props:  # additional params to Dense layer
+   activation: relu  # Non linear activation functions (will be use outside dense layer), values: {'relu', 'leaky', 'linear'}
+   use_bias: True  # uses a bias vector
+   kernel_initializer: lecun_normal  # kernel initializer (for  Dense layer)
+   kernel_regularizer: 0.01  # L2 regularization penalty
+
+drop_props:
+    drop_class: GaussianNoise  # keras class for the dropouts: `GaussianNoise` or `Dropout`
+
+floatX: float32  # keras float precision
+
+# Losses params
+r2_ssi_loss: True  # If True optimize R2 loss instead of regular MSE
+weight_ae: 1.  # autoencoder loss weight
+weight_ssi: 1. # autoregression loss weight
+weight_ssi_raw: 1.  # loss weight for raw data prediction in next timestep
+
