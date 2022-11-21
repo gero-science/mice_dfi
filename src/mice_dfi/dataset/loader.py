@@ -7,7 +7,8 @@ __all__ = [
     'load_full_meta',
     'sanity_check',
     'filter_CBC_dataset',
-    'load_lifespan_itp'
+    'load_lifespan_itp',
+    'fill_wbc_counts'
 ]
 
 import os
@@ -410,8 +411,8 @@ def sanity_check(df, genes=None, abs_tol_wbc=0.4, rel_tol_wbc=0.1, tol_rbc=0.05,
             df_ = df[ind_rbc_problem].copy()
             for key, val in calc_.items():
                 df_[key] = val
-            print(df_[['label', 'age', 'uid', 'mcv(fl)', 'mcv expected',
-                       'mch (pg)', 'mch expected', 'mchc (g/dl)', 'mchc expected']])
+            print(df_[['label', 'age', 'uid', 'mcv(fl)', 'mcv_pred',
+                       'mch (pg)', 'mch_pred', 'mchc (g/dl)', 'mchc_pred']])
     ind_problem = np.logical_or(ind_wbc_pct_problem, ind_wbc_tot_problem, ind_rbc_problem)
 
     return values_pass and missed_pass, ind_problem

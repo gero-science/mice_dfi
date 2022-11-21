@@ -415,6 +415,9 @@ def medmad(x, threshold=3):
 
 
 def calc_delta(df, feature, shift=1, key_id='uid', key_time='age'):
+    if df.duplicated(subset=[key_id, key_time], keep=False).any():
+        raise ValueError(f"DataFrame has duplicated ids and time points, please remove duplicates:\n"
+                         f"{df[df[[key_id, key_time]].duplicated(keep=False)][[key_id, key_time]]}")
     df = df.copy()
     df[f'{feature}_1'] = df[feature].copy()
     df[f'{feature}_0'] = np.nan
