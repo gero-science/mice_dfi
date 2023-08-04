@@ -91,9 +91,9 @@ def get_global_dir():
 
 
 def preprocess_mouse_data(df, is_longitudinal=False, strain='SWR/J', fix_tte=False, fill_defaults=True,
-                          ignore_keys=None):
+                          ignore_keys=None, append_keys=None):
     def get_float_X(X):
-        X = np.array(X, dtype=np.str)
+        X = np.array(X, dtype=np.str_)
         for i in range(X.shape[0]):
             # for j in range(X.shape[1]):
             try:
@@ -108,8 +108,12 @@ def preprocess_mouse_data(df, is_longitudinal=False, strain='SWR/J', fix_tte=Fal
         return X
 
     _ignore_fields = ['box', 'age_mo', 'week', 'time']
-    if ignore_keys is not None:
+    if ignore_keys is None:
         pass
+    elif isinstance(ignore_keys, (list, tuple)):
+        _ignore_fields.extend(list(ignore_keys))
+    else:
+        raise TypeError(f"{type(ignore_keys)=}")
 
     _fields_tuples = [('uid', 'animal id'), ('uid', 'uid'), ('id', 'mouse n'), ('group', 'group'),
                       ('sex', 'sex'), ('DOB', 'dob'), ('DOD', 'dod'), ('age', 'age'),
@@ -160,13 +164,16 @@ def preprocess_mouse_data(df, is_longitudinal=False, strain='SWR/J', fix_tte=Fal
     if 'uid' not in data_dict:
         data_dict['uid'] = data_dict['id']
 
+    if append_keys is not None:
+        for key in append_keys:
+            data_dict[key] = df[key].values
     if fill_defaults:
         for key, val in _default_values.items():
             if key not in data_dict:
                 data_dict[key] = np.array([val] * nsamples, dtype=type(val))
 
     # Set features
-    genes = df.columns.difference(used_fields + _ignore_fields).values
+    genes = df.columns.difference(used_fields + _ignore_fields + list(append_keys)).values
     res = pd.DataFrame(data=data_dict, index=df.index)
     res = pd.concat((res, df[genes].apply(get_float_X, raw=True, axis=1)), axis=1)
 
@@ -377,7 +384,7 @@ def sanity_check(df, genes=None, abs_tol_wbc=0.4, rel_tol_wbc=0.1, tol_rbc=0.05,
                 print(f"Found {sum(ind_wbc_tot_problem)} samples with WBC total number not equal sum of components")
             if verbose == 2:
                 df_ = df[ind_wbc_tot_problem].copy()
-                df_['wbc_pred'] = df_[d].sum(axis=1).values
+                df_['wbc expected'] = df_[d].sum(axis=1).values
                 print('Found data inconsistency for wbc total')
                 print(df_[['label', 'age', 'uid', 'wbc (k/ul)', 'wbc expected']])
 
@@ -722,3 +729,29 @@ def load_lifespan_itp(path=None):
     print("# of controls with known lifespan:", data.shape[0])
     data['age'] = data['age'] / 7
     return data
+
+
+def load_glob_by_mask(path, date_ref, prefix, skiprows=0, age_in_file=False):
+    day0 = datetime.datetime.strptime(date_ref, '%Y_%m_%d')
+    df_lst = []
+    file_lst = glob.glob(path + '/%s_*_preproc.xls*' % prefix)
+    file_lst = np.sort(file_lst, )
+    for i, name in enumerate(file_lst):
+        pattern = re.findall('%s_([0-_]*)_preproc' % prefix, name)[0]
+        ndays = (datetime.datetime.strptime(pattern, '%Y_%m_%d') - day0).days
+        data = pd.read_excel(name, header=skiprows)
+        data.columns = data.columns.str.lower()
+        data['uid'] = data['uid'].astype(str)
+        data['%s_num' % prefix] = i
+        if age_in_file:
+            data['age'] += int(ndays / 7.)
+        else:
+            data['age'] = int(ndays / 7.)
+        df_lst.append(data.copy())
+
+    data = pd.concat(df_lst, ignore_index=True)
+    data, genes = preprocess_mouse_data(data, is_longitudinal=False, strain='C57BL/6J', fill_defaults=False)
+    genes = np.setdiff1d(genes, ['%s_num' % str.lower(prefix)])
+    data = data.reset_index()
+    return data, genes
+

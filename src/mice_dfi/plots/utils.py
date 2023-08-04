@@ -415,6 +415,8 @@ def medmad(x, threshold=3):
 
 
 def calc_delta(df, feature, shift=1, key_id='uid', key_time='age'):
+    assert not df.index.has_duplicates, "df Index has duplicates, please fix this"
+
     if df.duplicated(subset=[key_id, key_time], keep=False).any():
         raise ValueError(f"DataFrame has duplicated ids and time points, please remove duplicates:\n"
                          f"{df[df[[key_id, key_time]].duplicated(keep=False)][[key_id, key_time]]}")
@@ -426,8 +428,21 @@ def calc_delta(df, feature, shift=1, key_id='uid', key_time='age'):
         df_ = df_.sort_values(key_time)
         ages = df_[key_time].values
         for i, age in enumerate(ages[:-shift]):
-            df.loc[df_[df_[key_time] == ages[i + shift]].index, f'{feature}_0'] = \
-                df_.loc[df_[key_time] == age, f'{feature}_1'].values
+            # print(df_[df_[key_time] == ages[i + shift]].index, '###',
+            #       df.loc[df_[df_[key_time] == ages[i + shift]].index, f'{feature}_0'],
+            #       '###',  df_[key_time] == age )
+            mask_age1 = (df_[key_time] == ages[i + shift]).values
+            mask_age0 = (df_[key_time] == ages[i]).values
+            # if mask_age1.sum() != mask_age0.sum():
+            #     print("HMMM", mask_age1.sum(), mask_age0.sum())
+            #
+            # if mask_age1.sum() == 0:
+            #     continue
+            # print("ZZZZ", mask_age1, mask_age0,  df_.index[mask_age1], "####\n",
+            #       df.loc[df_.index[mask_age1], f'{feature}_0'], "####\n",
+            #       df_.loc[mask_age0, f'{feature}_1'].values)
+
+            df.loc[df_.index[mask_age1], f'{feature}_0'] = df_.loc[mask_age0, f'{feature}_1'].values
     df[f'{feature}_delta'] = df[f'{feature}_1'] - df[f'{feature}_0']
     return df
 
